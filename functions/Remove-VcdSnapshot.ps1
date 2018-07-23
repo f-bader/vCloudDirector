@@ -4,14 +4,14 @@ function Remove-VcdSnapshot {
         [Parameter(Mandatory = $true)][string]$VM,
         [Parameter(Mandatory = $true)][string]$vAppName,
         [Parameter(Mandatory = $false)][ValidateNotNull()][string]$APIurl = $GlobalvCDAPIUri,
-        [Parameter(Mandatory = $false)][ValidateNotNull()]$Session = $GlobalvCDSession
+        [Parameter(Mandatory = $false)][ValidateNotNull()]$Headers = $GlobalvCDHeaders
     )
     Begin {
 
     }
     Process {
         try {
-            $VMXml = Get-VcdVM -Name $VM -vAppName $vAppName -Session $Session -APIurl $APIurl -ErrorAction Stop
+            $VMXml = Get-VcdVM -Name $VM -vAppName $vAppName -Headers $Headers -APIurl $APIurl -ErrorAction Stop
             if ( ($VMXml | Measure-Object | Select-Object -ExpandProperty Count) -ne 1 ) {
                 Write-Error "Found $($VMXml | Measure-Object | Select-Object -ExpandProperty Count) VMs. Abort." -ErrorAction Stop
             }
@@ -19,7 +19,7 @@ function Remove-VcdSnapshot {
             if ($pscmdlet.ShouldProcess($VM, "Remove Snapshot")) {
                 $Uri = $VMXml.href + "/action/removeAllSnapshots"
 
-                $Task = Invoke-RestMethod -Uri $Uri -Method POST -WebSession $Session -ErrorAction Stop
+                $Task = Invoke-RestMethod -Uri $Uri -Method POST -Headers $Headers -ErrorAction Stop
                 Write-Verbose $Task.Task.Operation
                 if ($RunAsync.IsPresent) {
                     Return $Task.Task
@@ -28,7 +28,7 @@ function Remove-VcdSnapshot {
                     try {
                         do {
                             Start-Sleep 1
-                            $Task = Invoke-RestMethod -Uri $Task.Task.href -Method GET -WebSession $Session
+                            $Task = Invoke-RestMethod -Uri $Task.Task.href -Method GET -Headers $Headers
                             Write-Verbose $Task.Task.Operation
                         } until ($Task.Task.Status -eq 'success' -or $Task.Task.Status -eq 'error')
                         Return $Task.Task

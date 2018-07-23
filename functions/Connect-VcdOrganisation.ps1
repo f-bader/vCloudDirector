@@ -4,11 +4,11 @@ function Connect-VcdOrganisation {
         [Parameter(Mandatory = $true)][string]$Organisation,
         [Parameter(Mandatory = $true)][System.Management.Automation.PSCredential]$Credential,
         [Parameter(Mandatory = $true)][string]$APIurl,
-        [Parameter(Mandatory = $false)][string]$APIVersion = "5.1"
+        [Parameter(Mandatory = $false)][string]$APIVersion = "30.0"
     )
 
     try {
-        #region Generate encoded Authentication string
+        #region Generate authentication string
         $AuthenticationString = $($Credential.UserName) + '@' + $Organisation + ':' + $($Credential.GetNetworkCredential().Password)
         $EncodedAuthenticationString = [System.Text.Encoding]::UTF8.GetBytes($AuthenticationString)
         Remove-Variable AuthenticationString
@@ -16,34 +16,34 @@ function Connect-VcdOrganisation {
         Write-Verbose "Generated encoded Authentication string"
         #endregion
 
-        #region Define REST header
-        $headers = @{"Accept" = "application/*+xml;version=$APIVersion"}
-        Write-Verbose "Generated header"
-        #endregion
-
-        #region Get Login Url
+        #region Get login URL
         $Uri = $APIurl + '/versions'
-        $versions = Invoke-RestMethod -Uri $Uri -Headers $headers -Method GET -ErrorAction Stop
+        $versions = Invoke-RestMethod -Uri $Uri -Method GET -ErrorAction Stop
 
         Write-Verbose "Looking for API Version $APIVersion"
         foreach ($VersionInfo in $versions.SupportedVersions.VersionInfo) {
+            #$VersionInfo
             if ($VersionInfo.Version -eq $APIVersion) {
                 $loginUrl = $VersionInfo.LoginUrl
                 Write-Verbose "Login Url: $loginUrl"
                 break
             }
         }
-
         if ([string]::IsNullOrEmpty($loginUrl)) {
             throw "No Login URL Available - Exit"
         }
         #endregion
 
-        #region Login and generate Session
-        # Add Authorization to header
+
+        #region Generate session headers
+        $headers = @{"Accept" = "application/*+xml;version=$APIVersion"}
         $headers += @{"Authorization" = "Basic $($EncodedAuthenticationStringBase64)"}
-        $SessionInformation = Invoke-RestMethod -Uri $loginurl -Headers $headers -Method POST -Session vCloudSession -ErrorAction Stop
-        if ($vCloudSession.Headers.Count -eq 0 ) {
+        Write-Verbose "Generated header"
+        [xml]$session
+        $SessionInformation = Invoke-WebRequest -Uri $loginUrl -Headers $headers -Method POST -SessionVariable vCoudSession -ErrorAction Stop -UseBasicParsing
+        $headers = @{"Accept" = "application/*+xml;version=$APIVersion"}
+        $headers += @{"x-vcloud-authorization" = $($SessionInformation.Headers.'x-vcloud-authorization')}
+        if ($SessionInformation.Headers -eq 0 ) {
             throw "No header found"
         }
         #endregion
@@ -51,6 +51,7 @@ function Connect-VcdOrganisation {
         #region
         Set-Variable -Name "GlobalvCDAPIUri" -Value $APIurl -Scope Global
         Set-Variable -Name "GlobalvCDSession" -Value $vCloudSession -Scope Global
+        Set-Variable -Name "GlobalvCDHeaders" -Value $headers -Scope Global
         Return "Login to organisation $($SessionInformation.Session.org) with user $($SessionInformation.Session.user) successful"
         #endregion
 
