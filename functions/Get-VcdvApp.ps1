@@ -3,12 +3,12 @@ function Get-VcdvApp {
     param(
         [Parameter(Mandatory = $true)][string]$Name,
         [Parameter(Mandatory = $false)][ValidateNotNull()][string]$APIurl = $GlobalvCDAPIUri,
-        [Parameter(Mandatory = $false)][ValidateNotNull()]$Session = $GlobalvCDSession
+        [Parameter(Mandatory = $false)][ValidateNotNull()]$Headers = $GlobalvCDHeaders
     )
     try {
         Write-Verbose "Query REST API for vApp: $Name"
         $Uri = $APIurl + "/query?type=vApp&filter=(name==$Name)"
-        $vAppXml = Invoke-RestMethod -Uri $Uri -Method GET -WebSession $Session -ErrorAction Stop
+        $vAppXml = Invoke-RestMethod -Uri $Uri -Method GET -Headers $Headers -ErrorAction Stop
         if ($vAppXml.QueryResultRecords.total -eq 0) {
             Write-Error "Found $($vAppXml.QueryResultRecords.total) vApps"
         } else {

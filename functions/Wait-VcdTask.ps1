@@ -3,7 +3,7 @@ function Wait-VcdTask {
     param(
         [Parameter(Mandatory = $true)][string]$TaskId,
         [Parameter(Mandatory = $false)][ValidateNotNull()][string]$APIurl = $GlobalvCDAPIUri,
-        [Parameter(Mandatory = $false)][ValidateNotNull()]$Session = $GlobalvCDSession
+        [Parameter(Mandatory = $false)][ValidateNotNull()]$Headers = $GlobalvCDHeaders
     )
     Process {
         try {

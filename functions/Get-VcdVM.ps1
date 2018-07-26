@@ -4,7 +4,7 @@ function Get-VcdVM {
         [Parameter(Mandatory = $true)][string]$Name,
         [Parameter(Mandatory = $false)][string]$vAppName,
         [Parameter(Mandatory = $false)][ValidateNotNull()][string]$APIurl = $GlobalvCDAPIUri,
-        [Parameter(Mandatory = $false)][ValidateNotNull()]$Session = $GlobalvCDSession
+        [Parameter(Mandatory = $false)][ValidateNotNull()]$Headers = $GlobalvCDHeaders
     )
     try {
         # Check if user has specified a vApp Name
@@ -13,7 +13,7 @@ function Get-VcdVM {
             $resource = "/query?type=vm&filter=(name==$Name)"
         } else {
             Write-Verbose "Query with vApp $vAppName"
-            $vAppXml = Get-VcdvApp -Name $vAppName -Session $Session -APIurl $APIurl -ErrorAction Stop
+            $vAppXml = Get-VcdvApp -Name $vAppName -Headers $Headers -APIurl $APIurl -ErrorAction Stop
             if ( ($vAppXml | Measure-Object | Select-Object -ExpandProperty Count) -ne 1 ) {
                 Write-Error "Found $($vAppXml | Measure-Object | Select-Object -ExpandProperty Count) vApp. Abort." -ErrorAction Stop
             }
@@ -23,7 +23,7 @@ function Get-VcdVM {
         # Lookup VM
         Write-Verbose "Query REST API for VM: $Name"
         $Uri = $APIurl + $resource
-        $ReturnXml = Invoke-RestMethod -Uri $Uri -Method GET -WebSession $Session -ErrorAction Stop
+        $ReturnXml = Invoke-RestMethod -Uri $Uri -Method GET -Headers $Headers -ErrorAction Stop
 
         if ($ReturnXml.QueryResultRecords.total -eq 1) {
             Write-Verbose "Found VM $Name"

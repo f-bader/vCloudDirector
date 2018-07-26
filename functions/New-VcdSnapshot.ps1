@@ -8,7 +8,7 @@ function New-VcdSnapshot {
         [switch]$RunAsync,
         [Parameter(Mandatory = $false)][string]$Description,
         [Parameter(Mandatory = $false)][ValidateNotNull()][string]$APIurl = $GlobalvCDAPIUri,
-        [Parameter(Mandatory = $false)][ValidateNotNull()]$Session = $GlobalvCDSession
+        [Parameter(Mandatory = $false)][ValidateNotNull()]$Headers = $GlobalvCDHeaders
     )
     Begin {
         if ($Memory.IsPresent) {
@@ -26,7 +26,7 @@ function New-VcdSnapshot {
     }
     Process {
         try {
-            $VMXml = Get-VcdVM -Name $VM -vAppName $vAppName -Session $Session -APIurl $APIurl -ErrorAction Stop
+            $VMXml = Get-VcdVM -Name $VM -vAppName $vAppName -Headers $Headers -APIurl $APIurl -ErrorAction Stop
             if ( ($VMXml | Measure-Object | Select-Object -ExpandProperty Count) -ne 1 ) {
                 Write-Error "Found $($VMXml | Measure-Object | Select-Object -ExpandProperty Count) VMs. Abort." -ErrorAction Stop
             }
@@ -42,7 +42,7 @@ function New-VcdSnapshot {
             </CreateSnapshotParams>"
 
             if ($pscmdlet.ShouldProcess($VM, "Create Snapshot")) {
-                $Task = Invoke-RestMethod -Uri $Uri -ContentType "application/vnd.vmware.vcloud.createSnapshotParams+xml" -Method POST -WebSession $Session -Body $xmlBody -ErrorAction Stop
+                $Task = Invoke-RestMethod -Uri $Uri -ContentType "application/vnd.vmware.vcloud.createSnapshotParams+xml" -Method POST -Headers $Headers -Body $xmlBody -ErrorAction Stop
                 $Task.Task.id = $Task.Task.id -replace 'urn:vcloud:task:',''
                 Write-Verbose $Task.Task.Operation
                 if ($RunAsync.IsPresent) {

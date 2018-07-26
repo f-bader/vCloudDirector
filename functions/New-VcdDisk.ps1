@@ -6,17 +6,17 @@ function New-VcdDisk {
         [Parameter(Mandatory = $true)][string]$vAppName,
         [switch]$RunAsync,
         [Parameter(Mandatory = $false)][ValidateNotNull()][string]$APIurl = $GlobalvCDAPIUri,
-        [Parameter(Mandatory = $false)][ValidateNotNull()]$Session = $GlobalvCDSession
+        [Parameter(Mandatory = $false)][ValidateNotNull()]$Headers = $GlobalvCDHeaders
     )
     Process {
         try {
-            $VMXml = Get-VcdVM -Name $VM -vAppName $vAppName -Session $Session -APIurl $APIurl -ErrorAction Stop
+            $VMXml = Get-VcdVM -Name $VM -vAppName $vAppName -Headers $Headers -APIurl $APIurl -ErrorAction Stop
             if ( ($VMXml | Measure-Object | Select-Object -ExpandProperty Count) -ne 1 ) {
                 Write-Error "Found $($VMXml | Measure-Object | Select-Object -ExpandProperty Count) VMs. Abort." -ErrorAction Stop
             }
 
             $Uri = $VMXml.href + "/virtualHardwareSection/disks"
-            $Disks = Invoke-RestMethod -Uri $Uri -Method GET -WebSession $Session
+            $Disks = Invoke-RestMethod -Uri $Uri -Method GET -Headers $Headers
 
             # Get last hard drive from current VM
             $tmpDisk = $Disks.RasdItemsList.Item | Where-Object {$_.Description -eq "Hard Disk"} | Sort-Object {[int]$_.AddressOnParent} | select-Object -Last 1
@@ -47,7 +47,7 @@ function New-VcdDisk {
             $Disks.RasdItemsList.AppendChild($newDisk) | Out-Null
 
             if ($pscmdlet.ShouldProcess($VM, "Create Disk")) {
-                $Task = Invoke-RestMethod -Uri $Uri -ContentType "application/vnd.vmware.vcloud.rasdItemsList+xml" -Method PUT -WebSession $Session -Body $Disks -ErrorAction Stop
+                $Task = Invoke-RestMethod -Uri $Uri -ContentType "application/vnd.vmware.vcloud.rasdItemsList+xml" -Method PUT -Headers $Headers -Body $Disks -ErrorAction Stop
                 $Task.Task.id = $Task.Task.id -replace 'urn:vcloud:task:',''
                 Write-Verbose $Task.Task.Operation
                 if ($RunAsync.IsPresent) {
