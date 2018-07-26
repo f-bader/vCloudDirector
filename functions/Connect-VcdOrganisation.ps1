@@ -39,7 +39,6 @@ function Connect-VcdOrganisation {
         $headers = @{"Accept" = "application/*+xml;version=$APIVersion"}
         $headers += @{"Authorization" = "Basic $($EncodedAuthenticationStringBase64)"}
         Write-Verbose "Generated header"
-        [xml]$session
         $SessionInformation = Invoke-WebRequest -Uri $loginUrl -Headers $headers -Method POST -SessionVariable vCoudSession -ErrorAction Stop -UseBasicParsing
         $headers = @{"Accept" = "application/*+xml;version=$APIVersion"}
         $headers += @{"x-vcloud-authorization" = $($SessionInformation.Headers.'x-vcloud-authorization')}
